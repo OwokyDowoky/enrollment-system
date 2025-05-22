@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Enrollment System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+  body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background: #f4f7f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .container {
+    width: 100%;
+    max-width: 700px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    padding: 2rem 3rem;
+  }
+  h1 {
+    text-align: center;
+    font-weight: 600;
+    color: #0052cc;
+    margin-bottom: 1.5rem;
+  }
+  form {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    row-gap: 1rem;
+    column-gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  label {
+    font-weight: 600;
+    color: #0052cc;
+  }
+  input, select {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #d2d8de;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.25s;
+  }
+  input:focus, select:focus {
+    border-color: #0052cc;
+    outline: none;
+  }
+  button {
+    grid-column: 2 / 3;
+    background-color: #0052cc;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    justify-self: start;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #003d99;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+  thead {
+    background-color: #0052cc;
+    color: white;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e1e4eb;
+  }
+  tbody tr:hover {
+    background-color: #f0f5ff;
+  }
+  .delete-btn {
+    background-color: #cc0000;
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .delete-btn:hover {
+    background-color: #990000;
+  }
+  .empty-msg {
+    text-align: center;
+    margin-top: 1rem;
+    color: #888;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enrollment System</h1>
+    <form id="enrollForm">
+      <label for="studentId">Student ID:</label>
+      <input type="text" id="studentId" placeholder="e.g. 12345" required pattern="\\S+" title="Student ID cannot be empty or just spaces" />
+      <label for="studentName">Student Name:</label>
+      <input type="text" id="studentName" placeholder="e.g. Jane Doe" required pattern="\\S+" title="Student Name cannot be empty or just spaces" />
+      <label for="studentCourse">Course:</label>
+      <select id="studentCourse" required>
+        <option value="" disabled selected>Select course</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Computer Science">Computer Science</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+        <option value="Literature">Literature</option>
+      </select>
+      <div></div>
+      <button type="submit">Enroll Student</button>
+    </form>
+
+    <div id="studentsContainer">
+      <table id="studentsTable" aria-label="Enrolled students list" style="display:none;">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="studentsList"></tbody>
+      </table>
+      <p class="empty-msg" id="emptyMessage">No students enrolled yet.</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const enrollForm = document.getElementById('enrollForm');
+      const studentIdInput = document.getElementById('studentId');
+      const studentNameInput = document.getElementById('studentName');
+      const studentCourseSelect = document.getElementById('studentCourse');
+      const studentsList = document.getElementById('studentsList');
+      const studentsTable = document.getElementById('studentsTable');
+      const emptyMessage = document.getElementById('emptyMessage');
+
+      // In-memory "database"
+      let students = [];
+
+      function renderStudents() {
+        studentsList.innerHTML = '';
+        if (students.length === 0) {
+          studentsTable.style.display = 'none';
+          emptyMessage.style.display = 'block';
+          return;
+        }
+        studentsTable.style.display = '';
+        emptyMessage.style.display = 'none';
+
+        students.forEach((student, index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = 
+          \`<td>\${student.id}</td>
+          <td>\${student.name}</td>
+          <td>\${student.course}</td>
+          <td><button class="delete-btn" data-index="\${index}" aria-label="Remove \${student.name}">Delete</button></td>\`;
+          studentsList.appendChild(tr);
+        });
+      }
+
+      enrollForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const id = studentIdInput.value.trim();
+        const name = studentNameInput.value.trim();
+        const course = studentCourseSelect.value;
+
+        if (!id || !name || !course) {
+          alert('Please fill all fields properly.');
+          return;
+        }
+
+        // Check for duplicate student ID
+        if (students.find(s => s.id.toLowerCase() === id.toLowerCase())) {
+          alert('Student ID already enrolled.');
+          return;
+        }
+
+        students.push({ id, name, course });
+
+        // Clear inputs
+        studentIdInput.value = '';
+        studentNameInput.value = '';
+        studentCourseSelect.value = '';
+
+        renderStudents();
+      });
+
+      studentsList.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+          const idx = e.target.getAttribute('data-index');
+          if (idx !== null) {
+            students.splice(idx, 1);
+            renderStudents();
+          }
+        }
+      });
+
+      renderStudents();
+    })();
+  </script>
+</body>
+</html>
+
